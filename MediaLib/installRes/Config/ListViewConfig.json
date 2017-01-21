@@ -1,0 +1,29 @@
+{
+	"MediaList":
+		{
+			"ItemFont":11,
+			"Headers":[
+				{
+					"Text":"Title",
+					"Width":300,
+					"DataMap":"title"
+				},
+				{
+					"Text":"Type",
+					"Width":400,
+					"DataMap":"type"
+				},
+				
+				{
+					"Text":"Path",
+					"Width":400,
+					"DataMap":"contentDir"
+				},
+				{
+					"Text":"Stars",
+					"Width":150,
+					"DataMap":"starStr"
+				}
+			]
+		}
+}

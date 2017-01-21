@@ -1,0 +1,12 @@
+{
+		"LargeImgResource":{
+			"mediaType":"Anime",
+			"resouceType":"LargImage",
+			"storePath":"./Resource/LargeImage/"
+		},
+		"LargeImgResourceDefault":{
+			"mediaType":"Anime",
+			"resouceType":"Image",
+			"storePath":"./Config/Img/Anmie.png"
+		}
+}
