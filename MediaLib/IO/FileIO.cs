@@ -85,7 +85,9 @@ namespace MediaLib
             }
             public void load()
             {
-                if (enable == false) return;
+                if (enable == false) {
+                    updateMediumForListDelegate(this.getMedium());
+                    return; }
                 
                 //update async
                 worker.DoWork += (object sender, DoWorkEventArgs e) => {
