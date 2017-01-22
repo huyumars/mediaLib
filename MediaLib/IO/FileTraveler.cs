@@ -10,6 +10,7 @@ namespace MediaLib
     namespace IO
     {
         public delegate void MediaDirHandler(DirectoryInfo dirName);
+        public delegate void MediaTemplateHandler(String fileName);
        public interface IMediaTravelConfig {
             String dirName { get; set; }
             MediaFileTraveler getFileTraveler();
@@ -20,6 +21,7 @@ namespace MediaLib
             protected MediaDirHandler handler;
             public MediaFileTraveler(IMediaTravelConfig _config) { config = _config; }
             public abstract void travel(MediaDirHandler handler);
+            public MediaTemplateHandler templateHandler;
             public abstract bool isValid(string dir);
         }
 
@@ -41,6 +43,10 @@ namespace MediaLib
             }
             private void _travel(DirectoryInfo dir, int depth = 0)
             {
+                //find template
+                if (templateHandler!=null && File.Exists(dir.FullName + "\\template.json"))
+                    templateHandler(dir.FullName + "\\template.json");
+
                 if (depth == (config as IFixDepthFileTravelerConfig).mediaFileExistDirLevel)
                 {
                     handler(dir);
@@ -49,8 +55,11 @@ namespace MediaLib
                 foreach (DirectoryInfo NextFolder in dir.GetDirectories())
                 {
                     _travel(NextFolder, depth + 1);
-
                 }
+
+                //end find template
+                if (templateHandler != null && File.Exists(dir.FullName + "\\template.json"))
+                    templateHandler(dir.FullName + "\\template.json");
             }
 
             public override bool isValid(string dir)

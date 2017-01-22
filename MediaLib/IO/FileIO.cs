@@ -54,9 +54,35 @@ namespace MediaLib
                
             }
 
-
             List<String> needDeleteMedia;
-
+            private Stack<Newtonsoft.Json.Linq.JObject> TemplateStack = null;
+            static string[] NoTemplate = new string[] {"UID", "contentDir", "title"};
+            private void refineWithTemplate(T media)
+            {
+                if(TemplateStack!=null && TemplateStack.Count > 0)
+                {
+                    Newtonsoft.Json.Linq.JObject template = TemplateStack.Peek();
+                    foreach(var tp in template)
+                    {
+                        if (typeof(T).GetProperty(tp.Key)!= null && !NoTemplate.Contains(tp.Key))
+                        {
+                            var p = typeof(T).GetProperty(tp.Key);
+                            //only set template value with stirng and Enum and Int
+                            if (p.GetValue(media,null) is String && p.SetMethod != null)
+                            {
+                                p.SetValue(media, (string)tp.Value);
+                            }
+                            else if (p.GetValue(media, null) is Enum && p.SetMethod != null)
+                            {
+                                if ((int)tp.Value != 0) //not default one
+                                {
+                                    p.SetValue(media, (int)tp.Value);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             public void load()
             {
                 if (enable == false) return;
@@ -64,12 +90,36 @@ namespace MediaLib
                 //update async
                 worker.DoWork += (object sender, DoWorkEventArgs e) => {
                     buildPathIndex();
+                    fileTraveler.templateHandler = new MediaTemplateHandler((String file)=> {
+                        Newtonsoft.Json.Linq.JObject template = Config.JSONHelper.readFromJsonFile<Newtonsoft.Json.Linq.JObject>(file);
+                        template["filePath"] = file;
+                        if(template != null)
+                        {
+                            if (TemplateStack == null) TemplateStack = new Stack<Newtonsoft.Json.Linq.JObject>();
+                            //if is the second time, template end, pop the template
+                            if(TemplateStack.Count>0 && TemplateStack.Peek()["filePath"].ToString()==template["filePath"].ToString())
+                            {
+                                TemplateStack.Pop();
+                            }
+                            else //the first time
+                            {
+                                TemplateStack.Push(template);
+                            }                      
+                        }
+                    });
                     fileTraveler.travel((DirectoryInfo info) => {
+                        T media = null;
+                        
                         if (pathIndex.ContainsKey(info.FullName))
-                            return;                     
+                        {
+                            media = (T)getMedia(pathIndex[info.FullName]);
+                            refineWithTemplate(media);
+                            return;
+                        }                   
                         //need to be update
                         String UID = Lib.MediaLib.assignUID(this);
-                        T media = (T)Lib.Media.MediaFactory(info, UID, _config.type);
+                        media = (T)Lib.Media.MediaFactory(info, UID, _config.type);
+                        refineWithTemplate(media);
                         mediaLib[media.UID] = media;
                         pathIndex[media.contentDir] = media.UID;
                     });

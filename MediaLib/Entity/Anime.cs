@@ -33,15 +33,23 @@ namespace MediaLib
             }
         }
 
+        public enum EvalType{
+            Default=0,
+            OneStar,
+            TwoStars,
+            ThreeStars,
+            FourStars,
+            FiveStars,
+        }
 
         [DataContract]
         public class Anime : Media
         {
 
-            private const byte fullStar = 5;
+            private const byte fullStar = (byte)EvalType.FiveStars;
 
             [DataMember]
-            public byte star { get; set; }
+            public EvalType star { get; set; }
             public static ImgManager _imgMgr { get {
                     var imgMgrConfig = Config.ConfigHelper<Config.ResourceConfig>.instance.Config("LargeImgResource");
 
@@ -79,9 +87,9 @@ namespace MediaLib
             public String starStr {
                 get{
                     StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < star; ++i)
+                    for (int i = 0; i < (byte)star; ++i)
                         sb.Append("★");
-                    for (int i = 0; i < fullStar - star; i++)
+                    for (int i = 0; i < fullStar - (byte)star; i++)
                         sb.Append("☆");
                     return sb.ToString();
                 }

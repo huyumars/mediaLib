@@ -86,10 +86,29 @@ namespace MediaLib
                 mediaListView.VirtualMode = true;
                 
                 mediaListView.RetrieveVirtualItem += MediaListView_RetrieveVirtualItem;
+
+                mediaListView.MouseClick += MediaListView_MouseClick;
                 //mediaListView.CacheVirtualItems += MediaListView_CacheVirtualItems;
             }
 
-            
+            private void MediaListView_MouseClick(object sender, MouseEventArgs e)
+            {
+                if(e.Button == MouseButtons.Right)
+                {
+                    if (mediaListView.SelectedIndices.Count > 0)
+                    {
+                        Lib.Media Copymedia = getMediaFromIndex(mediaListView.SelectedIndices[0]);
+                        //load read data from mediaLib
+                        Lib.Media media = Lib.MediaLib.instance.getMedia(Copymedia.UID);
+                        UI.MediaEditorViewController mea = new MediaEditorViewController(media, new string[] { "contentDir","UID"});
+                        mea.show();
+                        //reload Data
+                        reloadVirtualData();
+                        return;
+                    }
+                       
+                }
+            }
 
             List<String> displayList;
             Dictionary<String, int> imgIndex = new Dictionary<string, int>();
@@ -131,6 +150,7 @@ namespace MediaLib
                     allMedia.Add(media.UID, media);
                 });
                 displayList = buildDisplayList();
+                displayCache.Clear();
                 safeRefresh();
 
             }
@@ -270,46 +290,7 @@ namespace MediaLib
                 }
             }
 
-            //zoom in & out & give up
-            private void MediaListView_MouseWheel(object sender, MouseEventArgs e)
-            {
-               
-                double zoom;
-                if (e.Delta > 0)
-                {
-                    zoom = 1.1;
-                }
-                else
-                {
-                    zoom = 0.9;
-                }
-                System.Drawing.Size imgSize = mediaListView.LargeImageList.ImageSize;
-                imgSize.Height = (int)(imgSize.Height * zoom);
-                imgSize.Width = (int)(imgSize.Width * zoom);
-
-                if (imgSize.Width > 256)
-                {
-                    imgSize.Width = 256;
-                    imgSize.Height = 144;
-                }
-                if(imgSize.Width < 30)
-                {
-                    imgSize.Width = 30;
-                    imgSize.Height = 17;
-                }
-                List<System.Drawing.Image> tmp = new List<System.Drawing.Image>();
-                foreach(System.Drawing.Image img in mediaListView.LargeImageList.Images)
-                {
-                    tmp.Add(img);
-                }
-                mediaListView.LargeImageList.ImageSize = imgSize;
-              foreach(System.Drawing.Image image in tmp)
-                {
-                    mediaListView.LargeImageList.Images.Add(image);
-                }
-
-
-            }
+            
 
             public void changeView(View view)
             {
@@ -319,7 +300,11 @@ namespace MediaLib
             //initail
             public bool loadList()
             {
-                //load configuration
+                //load all header configuration
+                Config.ConfigHelper<Config.ListViewConfig>.instance.foreachConfig((Config.IConfig config) => {
+
+
+                });
                 config = Config.ConfigHelper<Config.ListViewConfig>.instance.Config("MediaList");
                 if (config == null)
                     return false;
@@ -346,114 +331,7 @@ namespace MediaLib
                 }
             }
 
-            /*
-             * 
-             private void updateItemInMainThread(Lib.Media media)
-            {
-                ListViewItem lvi;
-                if (allItems.ContainsKey(media.UID)){
-                    lvi = allItems[media.UID];
-                    if(mediaListView.Items.ContainsKey(media.UID)==false)
-                        mediaListView.Items.Add(lvi);
-                }
-                else
-                {
-                    lvi = new ListViewItem();
-                    allItems.Add(media.UID, lvi);
-                    mediaListView.Items.Add(lvi);
-                }
-                // title fixed
-                lvi.Text = media.title;
-                lvi.Name = media.UID;
-                lvi.enable(media.enable);
-                foreach (var headerConfig in config.Headers)
-                {
-                    if (headerConfig.Text != "Title")
-                    {
-                        lvi.SubItems.Add(media[headerConfig.DataMap]);
-                    }
-                }
-
-                if (media.enable == false) return;
-                lvi.ImageIndex = media.imgMgr.defaultImgIndex;// avoid to execute it again, default image
-                if (media.imgMgr == null) return;
-                media.imgMgr.getImageFromMedia(media,
-                (System.Drawing.Image image, Lib.Media _media) =>
-                {
-                    System.Drawing.Image displayImage = new System.Drawing.Bitmap(200, 150);
-                    var graphics = System.Drawing.Graphics.FromImage(displayImage);
-                    var size = image.Size;
-                    double ratio = Math.Min( 200.0/(double)image.Width , 150.0/ (double)image.Height);
-                    size.Height= (int )(ratio* size.Height);
-                    size.Width = (int)(ratio * size.Width);
-                    if(200.0 / (double)image.Width< 150.0 / (double)image.Height )
-                        graphics.DrawImage(image, new System.Drawing.Rectangle(new System.Drawing.Point(0,75 - size.Height/2), size));
-                    else
-                        graphics.DrawImage(image, new System.Drawing.Rectangle(new System.Drawing.Point(100- size.Width/2, 0), size));
-                    graphics.DrawImage(media.imgMgr.defaultImage, new System.Drawing.Rectangle(120, 73, 200/2, 150/2));
-                    
-                    Action<Object> AsyncUIDelegate = delegate (Object o)
-                    {
-                        updateImgForItem(lvi, displayImage, image, _media);
-                    };
-
-                    while (!mediaListView.IsHandleCreated) ;
-                    mediaListView.Invoke(AsyncUIDelegate, new object[] { media });
-                });
-
-            }
-
-            //reload everything
-            public void reloadData()
-            {
-                mediaListView.Items.Clear();
-                mediaListView.BeginUpdate();
-                //
-                Lib.MediaLib.instance.TravelMedium((Lib.Media media) => {
-                    updateItemInMainThread(media);
-                });
-                mediaListView.EndUpdate();
-
-            }
-
-                //only  refresh items in order to implement filter
-            public void refreshItems()
-            {
-                mediaListView.Items.Clear();
-                mediaListView.BeginUpdate();
-                //on need to refresh, recover all items
-                if (viewfilter == null)
-                {
-                    mediaListView.Items.AddRange(allItems.Values.ToArray());
-                    mediaListView.EndUpdate();
-                    return;
-                }             
-                Lib.MediaLib.instance.TravelMedium((Lib.Media media) => {
-                    //if has a filter
-                    if (viewfilter(media))
-                        mediaListView.Items.Add(allItems[media.UID]);
-
-                });
-                mediaListView.EndUpdate();
-            }
-
-
-            private Lib.Media getMediaFromItem(ListViewItem item)
-            {
-                String UID = item.Name;
-                return Lib.MediaLib.instance.getMedia(UID);
-            }
-
-            private void updateImgForItem(ListViewItem item, System.Drawing.Image Largeimg, System.Drawing.Image smallimg, Lib.Media media)
-            {
-                    smallImageList.Images.Add(media.UID, smallimg);
-                    largeImageList.Images.Add(media.UID, Largeimg);
-                    item.ImageIndex = largeImageList.Images.IndexOfKey(media.UID);
-                mediaListView.Refresh();
-            }
-
-
-            */
+         
             private bool updateImgForItemVritual(System.Drawing.Image Largeimg, System.Drawing.Image smallimg, Lib.Media media)
             {
                 smallImageList.Images.Add(media.UID, smallimg);
@@ -471,6 +349,7 @@ namespace MediaLib
             public void doubleClick(int index)
             {
                 Lib.Media media = getMediaFromIndex(index);
+
                 if(media.enable)
                     System.Diagnostics.Process.Start("explorer.exe", "\""+media.contentDir+"\"");
             }
@@ -487,11 +366,18 @@ namespace MediaLib
 
                 columSortInfo[sortColum] = !columSortInfo[sortColum];
                 displayList.Sort(new Comparison<String>((String a, String b) => {
-                    ListViewItem ai = displayCache[a];
-                    ListViewItem bi = displayCache[b];
-                    int returnVal = String.Compare(ai.SubItems[sortColum].Text, bi.SubItems[sortColum].Text);
-                    if (columSortInfo[sortColum] == false) returnVal *= -1;
-                    return returnVal;
+                    try
+                    {                        
+                        Lib.Media ai = allMedia[a];
+                        Lib.Media bi = allMedia[b];
+                        int returnVal = String.Compare(ai[config.Headers[sortColum].DataMap], bi[config.Headers[sortColum].DataMap]);
+                        if (columSortInfo[sortColum] == false) returnVal *= -1;
+                        return returnVal;
+                    }
+                    catch (Exception ex) {
+                        Logger.ERROR("error in sorting : "+ex.Message);
+                    }
+                    return 0;
                 }));
                 mediaListView.Refresh();
             }

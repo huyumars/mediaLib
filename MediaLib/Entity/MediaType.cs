@@ -29,7 +29,7 @@ namespace MediaLib
             protected System.IO.DirectoryInfo mPath;
 
             [DataMember]
-            public virtual String contentDir { get { return mPath.FullName; } set { mPath = new System.IO.DirectoryInfo(value); } }
+            public virtual String contentDir { get { return mPath==null?null:mPath.FullName; } set { mPath = new System.IO.DirectoryInfo(value); } }
 
             [DataMember]
             public String UID { get; set; }
@@ -64,14 +64,10 @@ namespace MediaLib
             {
                 get
                 {
-                    try
-                    {
-                        Type type = this.GetType();
-                        PropertyInfo pi = type.GetProperties().FirstOrDefault(x => x.Name == attr);
-                        return pi.GetValue(this, null).ToString();
-                    }
-                    catch  { }
-                    return "";
+                    Type type = this.GetType();
+                    PropertyInfo pi = type.GetProperties().FirstOrDefault(x => x.Name == attr);
+                    if (pi != null) return pi.GetValue(this, null).ToString();
+                    else return "";
                 }
             }
 

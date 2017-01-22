@@ -16,7 +16,6 @@ namespace MediaLib
         public delegate void UpdateMediumForList(IEnumerable<Media> medium);
         class MediaLib
         { 
-
             public Media getMedia(String UID)
             {
                 String[] str = UID.Split('#');
@@ -38,9 +37,7 @@ namespace MediaLib
             {
                 return rootManagers.Values.ToList();
             }
-           
-            
-
+              
             Dictionary<String,IO.IMediaRootManager> rootManagers;
             private MediaLib() {
                 rootManagers = new Dictionary<String, IO.IMediaRootManager>();

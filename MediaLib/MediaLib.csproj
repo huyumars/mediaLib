@@ -71,6 +71,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App\ThreadQueue.cs" />
+    <Compile Include="Config\ListViewConfig.cs" />
+    <Compile Include="Config\RootConfig.cs" />
     <Compile Include="Entity\Anime.cs" />
     <Compile Include="Config\TypeDefine.cs" />
     <Compile Include="Entity\MediaType.cs" />
@@ -92,6 +94,13 @@
       <DependentUpon>LibraryView.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\ListHelper.cs" />
+    <Compile Include="UI\MediaEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\MediaEditor.Designer.cs">
+      <DependentUpon>MediaEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\MediaEditorViewController.cs" />
     <Compile Include="Web\WebSearch.cs" />
     <Compile Include="Config\Config.cs" />
     <Compile Include="IO\FileIO.cs" />
@@ -121,6 +130,9 @@
     </Compile>
     <EmbeddedResource Include="UI\LibraryView.resx">
       <DependentUpon>LibraryView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\MediaEditor.resx">
+      <DependentUpon>MediaEditor.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
