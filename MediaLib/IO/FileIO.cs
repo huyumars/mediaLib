@@ -85,55 +85,66 @@ namespace MediaLib
             }
             public void load()
             {
-                if (enable == false) {
-                    updateMediumForListDelegate(this.getMedium());
-                    return; }
-                
-                //update async
-                worker.DoWork += (object sender, DoWorkEventArgs e) => {
-                    buildPathIndex();
-                    fileTraveler.templateHandler = new MediaTemplateHandler((String file)=> {
-                        Newtonsoft.Json.Linq.JObject template = Config.JSONHelper.readFromJsonFile<Newtonsoft.Json.Linq.JObject>(file);
-                        template["filePath"] = file;
-                        if(template != null)
-                        {
-                            if (TemplateStack == null) TemplateStack = new Stack<Newtonsoft.Json.Linq.JObject>();
-                            //if is the second time, template end, pop the template
-                            if(TemplateStack.Count>0 && TemplateStack.Peek()["filePath"].ToString()==template["filePath"].ToString())
-                            {
-                                TemplateStack.Pop();
-                            }
-                            else //the first time
-                            {
-                                TemplateStack.Push(template);
-                            }                      
-                        }
-                    });
-                    fileTraveler.travel((DirectoryInfo info) => {
-                        T media = null;
-                        
-                        if (pathIndex.ContainsKey(info.FullName))
-                        {
-                            media = (T)getMedia(pathIndex[info.FullName]);
-                            refineWithTemplate(media);
-                            return;
-                        }                   
-                        //need to be update
-                        String UID = Lib.MediaLib.assignUID(this);
-                        media = (T)Lib.Media.MediaFactory(info, UID, _config.type);
-                        refineWithTemplate(media);
-                        mediaLib[media.UID] = media;
-                        pathIndex[media.contentDir] = media.UID;
-                    });
-
-                    //remove items do not need
-                    foreach (String uid in needDeleteMedia)
+                if (enable == false)
+                {
+                    //guarantee all UI jobs should be in sub-threads
+                    worker.DoWork += (object sender, DoWorkEventArgs e) =>
                     {
-                        deleteMedia(uid);
-                    }
-                    updateMediumForListDelegate(this.getMedium());
-                };
-                worker.RunWorkerAsync();
+                        updateMediumForListDelegate(this.getMedium());
+                    };               
+                    return;
+                }
+                else
+                {
+                    //update async
+                    worker.DoWork += (object sender, DoWorkEventArgs e) =>
+                    {
+                        buildPathIndex();
+                        fileTraveler.templateHandler = new MediaTemplateHandler((String file) =>
+                        {
+                            Newtonsoft.Json.Linq.JObject template = Config.JSONHelper.readFromJsonFile<Newtonsoft.Json.Linq.JObject>(file);
+                            template["filePath"] = file;
+                            if (template != null)
+                            {
+                                if (TemplateStack == null) TemplateStack = new Stack<Newtonsoft.Json.Linq.JObject>();
+                                //if is the second time, template end, pop the template
+                                if (TemplateStack.Count > 0 && TemplateStack.Peek()["filePath"].ToString() == template["filePath"].ToString())
+                                {
+                                    TemplateStack.Pop();
+                                }
+                                else //the first time
+                                {
+                                    TemplateStack.Push(template);
+                                }
+                            }
+                        });
+                        fileTraveler.travel((DirectoryInfo info) =>
+                        {
+                            T media = null;
+
+                            if (pathIndex.ContainsKey(info.FullName))
+                            {
+                                media = (T)getMedia(pathIndex[info.FullName]);
+                                refineWithTemplate(media);
+                                return;
+                            }
+                            //need to be update
+                            String UID = Lib.MediaLib.assignUID(this);
+                            media = (T)Lib.Media.MediaFactory(info, UID, _config.type);
+                            refineWithTemplate(media);
+                            mediaLib[media.UID] = media;
+                            pathIndex[media.contentDir] = media.UID;
+                        });
+
+                        //remove items do not need
+                        foreach (String uid in needDeleteMedia)
+                        {
+                            deleteMedia(uid);
+                        }
+                        updateMediumForListDelegate(this.getMedium());
+                    };
+                    worker.RunWorkerAsync();
+                }
                 //start wathing the directory
                 fileWatcher = new MediaWatcher(_config.dirName);
                 fileWatcher.Start();

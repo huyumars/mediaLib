@@ -160,6 +160,7 @@ namespace MediaLib
                 foreach (Lib.Media media in medius)
                 {
                     loadImageQueue.enqueueTask(new ThreadQueue.Task(() => {
+                        Logger.DEBUG("load image for" + media.title);
                         loadImageForMedia(media);
                     }));
                 }
@@ -172,6 +173,7 @@ namespace MediaLib
                     media.imgMgr.getImageFromMedia(media,
                    (System.Drawing.Image image, Lib.Media _media) =>
                    {
+                       Logger.DEBUG("draw image for " + _media.title);
                        System.Drawing.Image displayImage = new System.Drawing.Bitmap(200, 150);
                        var graphics = System.Drawing.Graphics.FromImage(displayImage);
                        var size = image.Size;

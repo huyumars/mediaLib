@@ -35,7 +35,8 @@ namespace MediaLib
                 p.StartInfo.CreateNoWindow = true;
                 //启动程序   
                 //向CMD窗口发送输入信息：  
-                string arguments = " -ss 00:00:10  -i  \"" + path + "\"  -f image2  -y \"" + imgFile + "\"";
+                // string arguments = " -ss 00:00:10  -i  \"" + path + "\"  -f image2  -y \"" + imgFile + "\"";
+                string arguments = " -ss 00:00:10  -i  \"" + path + "\" -vframes 1 -q:v 2 \"" + imgFile + "\"";
                 p.StartInfo.Arguments = arguments;
                 p.Start();
                 // 异步获取命令行内容
@@ -51,7 +52,11 @@ namespace MediaLib
                     if (String.IsNullOrEmpty(e.Data) == false)
                         Logger.INFO(e.Data);
                 });
-                p.WaitForExit();
+                bool end = p.WaitForExit(1000*20);
+                if(end == false)
+                {
+                    p.Kill();
+                }
                 //p.StandardInput.WriteLine(get_utf8(str).ToCharArray());
                 //-ss表示搜索到指定的时间 -i表示输入的文件 -y表示覆盖输出 -f表示强制使用的格式  
                 if (System.IO.File.Exists(imgFile))
