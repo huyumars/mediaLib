@@ -118,7 +118,7 @@ namespace MediaLib
             //load image for list in backgroud
             BackgroundWorker loadImageWorker = new BackgroundWorker();
             ThreadQueue loadImageQueue = new ThreadQueue();
-
+            ThreadQueue reloadThreadQueue = new ThreadQueue();
            
             
             private void safeRefresh()
@@ -141,17 +141,25 @@ namespace MediaLib
                 }
             }
             
-
-            public void reloadVirtualData()
+            public void reloadDataImpl()
             {
-                //copy to avoid muti-thread conflict
                 allMedia.Clear();
                 Lib.MediaLib.instance.TravelMedium((Lib.Media media) => {
-                    allMedia.Add(media.UID, media);
+                    //if find new item add it
+                        allMedia.Add(media.UID, media);
+
                 });
                 displayList = buildDisplayList();
                 displayCache.Clear();
                 safeRefresh();
+            }
+            public void reloadVirtualData()
+            {
+                //gurantee reload is in a single thread
+                reloadThreadQueue.enqueueTask(new ThreadQueue.Task(() =>
+                {
+                    reloadDataImpl();
+                }));
 
             }
 
